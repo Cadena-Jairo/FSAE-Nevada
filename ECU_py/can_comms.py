@@ -58,3 +58,5 @@ if __name__ == '__main__':
     print("\nDECODER")
     parse_can_message(msg, test_flag)
     print()
+    
+    
