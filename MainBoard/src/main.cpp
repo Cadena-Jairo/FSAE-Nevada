@@ -1,6 +1,7 @@
 #ifndef __IMXRT1062__
   #error "This program is for teensy4.1 only."
 #endif
+
 #include <Arduino.h>
 #include <interrupts.h>
 #include <can.h>
