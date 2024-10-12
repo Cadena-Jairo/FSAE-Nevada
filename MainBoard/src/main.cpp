@@ -1,3 +1,4 @@
+#include "ACAN_T4_CANMessage.h"
 #include "core_pins.h"
 #include "usb_serial.h"
 #ifndef __IMXRT1062__
@@ -11,9 +12,11 @@
 #ifndef __clang__
 #include <interrupts.h>
 #endif
-#include <Arduino.h> // Ignore clang error
 #include "can/can.h"
+#include <Arduino.h> // Ignore clang error
 
+// Store all status stuff here
+struct StatusData statusData;
 
 /*
  * Interrupt service routines:
@@ -36,9 +39,4 @@ void setup() {
   DIGITAL_INPUT_PIN_INIT();
 }
 
-void loop() {
-  struct Message message = can_rx();
-  if (  message.length != 0x00) {
-    Serial.printf("MessageID: 0x%lx Message: 0x%llx\n", message.message_id, message.data_u64);
-  }
-}
+void loop() { can_rx(&statusData); }
