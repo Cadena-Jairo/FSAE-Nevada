@@ -1,23 +1,23 @@
 #pragma once
-#include <ACAN_T4.h>
+#include <ACAN_T4.h> // Ignore clang error. It dosn't know what it's talking about.
 
 #define BIT_RATE1 250
 #define BIT_RATE2 500
 #define BIT_RATE3 500
 
 // Inverter can message ID's
-#define COMMAND_MESSAGE       0x0c0
-#define TEMPS_1               0x0a0
-#define TEMPS_2               0x0a1
-#define TEMPS_3               0x0a2
-#define DIGITAL_INPUT_STATUS  0x0a4
-#define MOTOR_POSITION_INFO   0x0a5
-#define CURRENT_INFO          0x0a6
-#define VOLTAGE_INFO          0x0a7
-#define FLUX_INFO             0x0a8
-#define INTERNAL_VOLTAGES     0x0a9
-#define INTERNAL_STATES       0x0aa
-#define FAULT_CODES           0x0ab
+#define COMMAND_MESSAGE 0x0c0
+#define TEMPS_1 0x0a0
+#define TEMPS_2 0x0a1
+#define TEMPS_3 0x0a2
+#define DIGITAL_INPUT_STATUS 0x0a4
+#define MOTOR_POSITION_INFO 0x0a5
+#define CURRENT_INFO 0x0a6
+#define VOLTAGE_INFO 0x0a7
+#define FLUX_INFO 0x0a8
+#define INTERNAL_VOLTAGES 0x0a9
+#define INTERNAL_STATES 0x0aa
+#define FAULT_CODES 0x0ab
 #define TORQUE_AND_TIMER_INFO 0x0ac
 
 struct CommandMessage {
@@ -147,7 +147,7 @@ struct StatusData {
 };
 
 void can_init();
-void can_rx(StatusData* statusData);
+void can_rx(StatusData *statusData);
 void can_tx(CANMessage message);
 
 void send_command_message(struct CommandMessage message);

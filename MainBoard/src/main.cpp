@@ -1,4 +1,4 @@
-#include "ACAN_T4_CANMessage.h"
+#include "ACAN_T4_CANMessage.h" // Ignore clang error it's being stupid
 #include "core_pins.h"
 #include "usb_serial.h"
 #ifndef __IMXRT1062__
@@ -13,7 +13,7 @@
 #include <interrupts.h>
 #endif
 #include "can/can.h"
-#include <Arduino.h> // Ignore clang error
+#include <Arduino.h>
 
 // Store all status stuff here
 struct StatusData statusData;

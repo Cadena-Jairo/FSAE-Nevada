@@ -1,4 +1,4 @@
-#include "can.h"
+#include "can.h" // Ignore clang error it's being dumb
 #include "ACAN_T4_CANMessage.h"
 #include "core_pins.h"
 #include "usb_serial.h"
@@ -7,8 +7,8 @@
 
 void can_init() {
   ACAN_T4_Settings settings(BIT_RATE1 * 1000);
-  ACAN_T4::can2.begin(settings);
-  const unsigned int canError = ACAN_T4::can2.begin(settings);
+  ACAN_T4::can1.begin(settings);
+  const unsigned int canError = ACAN_T4::can1.begin(settings);
   if (canError == 0x00)
     Serial.printf("Can 1 OK\n");
   else {
@@ -33,7 +33,7 @@ void can_init() {
 
 void can_rx(StatusData* statusData) {
   CANMessage canMessage;
-  ACAN_T4::can2.receive(canMessage);
+  ACAN_T4::can1.receive(canMessage);
   
   if (canMessage.len == 0x00) return;
   
@@ -120,10 +120,14 @@ void can_rx(StatusData* statusData) {
     case TORQUE_AND_TIMER_INFO:
       break;
   }
-  Serial.printf("Module A Temp: %hd  Module B Temp: %hd  Module C Temp: %hd\n",
-                statusData->tempratureMessage1.moduleA_temp,
-                statusData->tempratureMessage1.moduleB_temp,
-                statusData->tempratureMessage1.moduleC_temp);
+  float temp1, temp2, temp3;
+  temp1 = (float) statusData->tempratureMessage1.moduleA_temp / 10;
+  temp2 = (float) statusData->tempratureMessage1.moduleB_temp / 10;
+  temp3 = (float) statusData->tempratureMessage1.moduleC_temp / 10;
+  Serial.printf("Module A Temp: %0.2f  Module B Temp: %0.2f  Module C Temp: %0.2f\n",
+                temp1,
+                temp2,
+                temp3);
 }
 
 void can_tx(CANMessage message) {
