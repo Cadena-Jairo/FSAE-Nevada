@@ -15,8 +15,9 @@
 #include "can/can.h"
 #include <Arduino.h>
 
-// Store all status stuff here
+// Can data
 struct StatusData statusData;
+struct FrontControllerData frontControllerData;
 
 /*
  * Interrupt service routines:
@@ -30,7 +31,8 @@ void button_interrupt() {
 void setup() {
   Serial.begin(115200);
   Serial.printf("Starting...\n");
-  can_init();
+  can_init(1);
+  can_init(2);
   // Each entry = {pin_number, mode (INPUT, INPUT_PULLDOWN, INPUT_PULLUP, or
   // INPUT_DISABLE), ISR(type void))}
   DIGITAL_INPUT_PIN_CREATE(){{1, INPUT, button_interrupt}};
@@ -39,4 +41,7 @@ void setup() {
   DIGITAL_INPUT_PIN_INIT();
 }
 
-void loop() { can_rx(&statusData); }
+void loop() {
+  can1_rx(&statusData);
+  can2_rx(&frontControllerData);
+}

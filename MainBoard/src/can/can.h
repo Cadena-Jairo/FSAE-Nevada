@@ -5,6 +5,7 @@
 #define BIT_RATE2 500
 #define BIT_RATE3 500
 
+/*------------START-CAN-1---------------*/
 // Inverter can message ID's
 #define COMMAND_MESSAGE 0x0c0
 #define TEMPS_1 0x0a0
@@ -19,7 +20,6 @@
 #define INTERNAL_STATES 0x0aa
 #define FAULT_CODES 0x0ab
 #define TORQUE_AND_TIMER_INFO 0x0ac
-
 struct CommandMessage {
   unsigned char direction_command;
   unsigned char inverter_discharge;
@@ -130,7 +130,6 @@ struct TorqueAndTimerInfo {
   unsigned short torque_feedback;
   unsigned long power_on_timer;
 };
-
 struct StatusData {
   struct TempratureMessage1 tempratureMessage1;
   struct TempratureMessage2 tempratureMessage2;
@@ -145,9 +144,40 @@ struct StatusData {
   struct FaultCodes faultCodes;
   struct TorqueAndTimerInfo torqueAndTimerInfo;
 };
+/*---------------END-CAN-1---------------------*/
+/*-------------START-CAN-2---------------------*/
+// Don't know what we should do with this.
+// We need to find a way to tell if we lost
+// connection with the front controller;
+#define WATCH_DOG_MESSAGE 0x00
+#define ACCELERATOR_MESSAGE 0x01
+#define BRAKE_MESSAGE 0x02
+#define BUTTON_MESSAGE 0x03
+struct WatchDogMessage {
+  unsigned long long int count;
+};
+struct AcceleratorMessage {
+  float potentiometer1;
+  float potentiometer2;
+};
+struct BrakeMessage {
+  float potentiometer1;
+  float potentiometer2;
+};
+struct ButtonMessage {
+  unsigned char startButton;
+};
+struct FrontControllerData {
+  struct WatchDogMessage watchDogMessage;
+  struct AcceleratorMessage acceleratorMessage;
+  struct BrakeMessage brakeMessage;
+  struct ButtonMessage buttonMessage;
+};
 
-void can_init();
-void can_rx(StatusData *statusData);
-void can_tx(CANMessage message);
+void can_init(unsigned char can_number);
+void can1_rx(StatusData *statusData);
+void can2_rx(FrontControllerData *frontControllerData);
+void can1_tx(CANMessage message);
+void can2_tx(CANMessage message);
 
 void send_command_message(struct CommandMessage message);
