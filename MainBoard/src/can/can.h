@@ -1,7 +1,7 @@
 #pragma once
 #include <ACAN_T4.h> // Ignore clang error. It dosn't know what it's talking about.
 
-#define BIT_RATE1 250
+#define BIT_RATE1 500
 #define BIT_RATE2 500
 #define BIT_RATE3 500
 
@@ -73,6 +73,7 @@ struct CurrentInfo {
   unsigned short dc_bus_current;
 };
 struct VoltageInfo {
+  // Use this one for pre-charging
   unsigned short dc_bus_voltage;
   unsigned short output_voltage;
   unsigned short vab_vd_voltage;
@@ -153,6 +154,7 @@ struct StatusData {
 #define ACCELERATOR_MESSAGE 0x01
 #define BRAKE_MESSAGE 0x02
 #define BUTTON_MESSAGE 0x03
+// BMS Message ids 4 to 154
 struct WatchDogMessage {
   unsigned long long int count;
 };
@@ -173,10 +175,14 @@ struct FrontControllerData {
   struct BrakeMessage brakeMessage;
   struct ButtonMessage buttonMessage;
 };
+struct BMSData {
+  float voltages[140];
+  float temps[100];
+};
 
 void can_init(unsigned char can_number);
 void can1_rx(StatusData *statusData);
-void can2_rx(FrontControllerData *frontControllerData);
+void can2_rx(FrontControllerData *frontControllerData, BMSData* bmsData);
 void can1_tx(CANMessage message);
 void can2_tx(CANMessage message);
 

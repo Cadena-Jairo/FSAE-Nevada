@@ -3,9 +3,9 @@
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
-  <component name="CMakePresetLoader"><![CDATA[{
-  "useNewFormat": true
-}]]></component>
+  <component name="CMakePresetLoader">{
+  &quot;useNewFormat&quot;: true
+}</component>
   <component name="CMakeRunConfigurationManager">
     <generated />
   </component>
@@ -16,9 +16,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8b9833ee-9cfc-4c02-9f00-53b170d43f81" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/lib/can/can.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/lib/can/can.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/can/can.h" beforeDir="false" afterPath="$PROJECT_DIR$/lib/can/can.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../FrontBoard/src/can/can.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../FrontBoard/src/can/can.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.cache/clangd/index/can.h.0C3F5431E4055F8F.idx" beforeDir="false" afterPath="$PROJECT_DIR$/.cache/clangd/index/can.h.0C3F5431E4055F8F.idx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.ccls" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.clang-tidy" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.clangd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/Makefile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/compile_commands.json" beforeDir="false" afterPath="$PROJECT_DIR$/compile_commands.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/platformio.ini" beforeDir="false" afterPath="$PROJECT_DIR$/platformio.ini" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/can/can.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/can/can.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/can/can.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/can/can.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -85,13 +93,14 @@
     "RunOnceActivity.cidr.known.project.marker": "true",
     "WebServerToolWindowFactoryState": "false",
     "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true"
+    "cidr.known.project.marker": "true",
+    "last_opened_file_path": "/media/rocket/E0EA-0C2C/PA2"
   }
 }]]></component>
   <component name="RunManager">
-    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
+    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
       <method v="2">
-        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
   </component>
@@ -104,6 +113,7 @@
       <option name="presentableId" value="Default" />
       <updated>1728169824358</updated>
       <workItem from="1728169826023" duration="113000" />
+      <workItem from="1731304680856" duration="104000" />
     </task>
     <servers />
   </component>

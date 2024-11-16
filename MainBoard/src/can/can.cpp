@@ -1,10 +1,15 @@
 #include "can.h" // Ignore clang error it's being dumb
+#include "../status/status.h"
 #include "ACAN_T4.h"
 #include "ACAN_T4_CANMessage.h"
 #include "core_pins.h"
 #include "usb_serial.h"
 #include "wiring.h"
 #include <Arduino.h>
+
+#define CAN_DISCONNECT_THRESHOLD 1000 // 1 second
+
+unsigned int last_can_message[2];
 
 void can_init(unsigned char can_number) {
   switch (can_number) {
@@ -67,6 +72,8 @@ void can1_rx(StatusData *statusData) {
 
   if (canMessage.len == 0x00)
     return;
+
+  last_can_message[0] = millis();
 
   // TODO: Test to make sure this is still working and remove it.
   Serial.printf("MessageID: 0x%lx Message: 0x%llx\n", canMessage.id,
@@ -152,10 +159,10 @@ void can1_rx(StatusData *statusData) {
         (0xffff000000000000 & CAN_DATA) >> 48;
     break;
   case FLUX_INFO:
-    statusData->fluxInfo.flux_command = (0x000000000000ffff & CAN_DATA) >> 0;
+    statusData->fluxInfo.flux_command =  (0x000000000000ffff & CAN_DATA) >> 0;
     statusData->fluxInfo.flux_feedback = (0x00000000ffff0000 & CAN_DATA) >> 16;
-    statusData->fluxInfo.id_feedback = (0x0000ffff00000000 & CAN_DATA) >> 32;
-    statusData->fluxInfo.iq_feedback = (0xffff000000000000 & CAN_DATA) >> 48;
+    statusData->fluxInfo.id_feedback =   (0x0000ffff00000000 & CAN_DATA) >> 32;
+    statusData->fluxInfo.iq_feedback =   (0xffff000000000000 & CAN_DATA) >> 48;
     break;
   case INTERNAL_VOLTAGES:
     statusData->internalVoltages.reference_voltage_15v =
@@ -168,53 +175,37 @@ void can1_rx(StatusData *statusData) {
         (0xffff000000000000 & CAN_DATA) >> 48;
     break;
   case INTERNAL_STATES:
-    /* FIXME: Fix bit shifts and find correct masking.
-    statusData->internalStates.vsm_state =          (0x00000000000000ff &
-    CAN_DATA) >> 0; statusData->internalStates.pwm_freq = (0x000000000000ff00 &
-    CAN_DATA) >> 8; statusData->internalStates.inverter_state =
-    (0x00000000ff000000 & CAN_DATA) >> 16;
-    statusData->internalStates.relay_state =        (0x000000ff00000000 &
-    CAN_DATA) >> 24; statusData->internalStates.inverter_run_mode =
-    (0x0000000000000000 & CAN_DATA) >> 32;
-    statusData->internalStates.self_sensing_assist_enable = (0x0000000000000000
-    & CAN_DATA) >> 33;
-    statusData->internalStates.inverter_active_discharge_state =
-    (0x0000000000000000 & CAN_DATA) >> 37;
-    statusData->internalStates.inverter_command_mode = (0x0000000000000000 &
-    CAN_DATA) >> 37; statusData->internalStates.rolling_counter_value =
-    (0x0000000000000000 & CAN_DATA) >> 40;
-    statusData->internalStates.inverter_state_enable = (0x0000000000000000 &
-    CAN_DATA) >> 44; statusData->internalStates.burst_model_mode =
-    (0x0000000000000000 & CAN_DATA) >> 48;
-    statusData->internalStates.start_mode_active = (0x0000000000000000 &
-    CAN_DATA) >> 0;
-    */
+    // TODO: Store this data into the struct.
     break;
   case FAULT_CODES:
+    // TODO: Store this data into the struct. (Although I don't think this would be very likely to happen)
     break;
   case TORQUE_AND_TIMER_INFO:
+    // TODO: Store this data into the struct.
     break;
   }
+  
+  // TODO: REMOVE THIS
   float temp1, temp2, temp3;
-  temp1 = (float)statusData->tempratureMessage1.moduleA_temp / 10;
-  temp2 = (float)statusData->tempratureMessage1.moduleB_temp / 10;
-  temp3 = (float)statusData->tempratureMessage1.moduleC_temp / 10;
+  temp1 = (float) statusData->tempratureMessage1.moduleA_temp / 10;
+  temp2 = (float) statusData->tempratureMessage1.moduleB_temp / 10;
+  temp3 = (float) statusData->tempratureMessage1.moduleC_temp / 10;
   Serial.printf(
       "Module A Temp: %0.2f  Module B Temp: %0.2f  Module C Temp: %0.2f\n",
       temp1, temp2, temp3);
 }
 
-void can2_rx(FrontControllerData *frontControllerData) {
+void can2_rx(FrontControllerData *frontControllerData, BMSData* bmsData) {
   CANMessage canMessage;
   ACAN_T4::can2.receive(canMessage);
   if (canMessage.len == 0x00)
     return;
+
+  last_can_message[1] = millis();
+
   switch (canMessage.id) {
   case WATCH_DOG_MESSAGE:
-    Serial.printf("Keepalive message from front controller recieved.");
-    // TODO: Implement some keepalive thing that stops the car if we havn't
-    // recieved a messsage from the front controller after a certian ammount of
-    // time.
+    // Not being used. We are using any message as a valid watch dog so we don't clog up the stream
     break;
   case ACCELERATOR_MESSAGE:
     frontControllerData->acceleratorMessage.potentiometer1 =
@@ -229,8 +220,16 @@ void can2_rx(FrontControllerData *frontControllerData) {
         (float)((0x00000000ffffffff & CAN_DATA) >> 32);
     break;
   case BUTTON_MESSAGE:
-    frontControllerData->buttonMessage.startButton =
-        (unsigned char)((0b00000001) >> 0);
+    frontControllerData->buttonMessage.startButton = (unsigned char) CAN_DATA;
+    break;
+  default:
+    if (canMessage.id > 3 && canMessage.id <= 73) {
+      bmsData->temps[(canMessage.id - 3) / 2] = canMessage.dataFloat[0];
+      bmsData->temps[((canMessage.id - 3) / 2) + 1] = canMessage.dataFloat[1];
+    } else if (canMessage.id > 73 && canMessage.id < 153) {
+      bmsData->voltages[(canMessage.id - 73) / 2] = canMessage.dataFloat[0];
+      bmsData->voltages[((canMessage.id - 73) / 2) + 1] = canMessage.dataFloat[1];
+    }
     break;
   }
 }
@@ -242,12 +241,28 @@ void can2_tx(CANMessage message) { ACAN_T4::can2.tryToSend(message); }
 void send_command_message(struct CommandMessage message) {
   CANMessage output;
   output.data64 =
-      (((unsigned long long int)message.commanded_torque_limit << 48) |
-       ((unsigned long long int)message.speed_mode_enable << 42) |
-       ((unsigned long long int)message.inverter_discharge << 41) |
-       ((unsigned long long int)message.inverter_enable << 40) |
-       ((unsigned long long int)message.direction_command << 32) |
-       ((unsigned long long int)message.speed_command << 16) |
-       ((unsigned long long int)message.torque_command));
+      (((unsigned long long int) message.commanded_torque_limit << 48) |
+       ((unsigned long long int) message.speed_mode_enable << 42) |
+       ((unsigned long long int) message.inverter_discharge << 41) |
+       ((unsigned long long int) message.inverter_enable << 40) |
+       ((unsigned long long int) message.direction_command << 32) |
+       ((unsigned long long int) message.speed_command << 16) |
+       ((unsigned long long int) message.torque_command));
   can1_tx(output);
+}
+
+void can_disconnect_check() {
+  unsigned int curr_time = millis();
+  for (int i = 0; i < 2; i ++) {
+    if ((curr_time - last_can_message[i]) > CAN_DISCONNECT_THRESHOLD) {
+      switch (i) {
+        case 0x00:
+          shutdown_car("CAN connection to inverter lost!");
+          return;
+        case 0x01:
+          shutdown_car("CAN connection to front controller lost!");
+          return;
+      }
+    }
+  }
 }
