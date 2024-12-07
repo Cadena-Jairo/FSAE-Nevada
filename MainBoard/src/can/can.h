@@ -1,5 +1,5 @@
 #pragma once
-#include <ACAN_T4.h> // Ignore clang error. It dosn't know what it's talking about.
+#include <FlexCAN_T4.h>
 
 #define BIT_RATE1 500
 #define BIT_RATE2 500
@@ -147,14 +147,11 @@ struct StatusData {
 };
 /*---------------END-CAN-1---------------------*/
 /*-------------START-CAN-2---------------------*/
-// Don't know what we should do with this.
-// We need to find a way to tell if we lost
-// connection with the front controller;
 #define WATCH_DOG_MESSAGE 0x00
 #define ACCELERATOR_MESSAGE 0x01
 #define BRAKE_MESSAGE 0x02
-#define BUTTON_MESSAGE 0x03
-// BMS Message ids 4 to 154
+#define BSPD_MESSAGE 0x03
+#define BUTTON_MESSAGE 0x04
 struct WatchDogMessage {
   unsigned long long int count;
 };
@@ -166,6 +163,9 @@ struct BrakeMessage {
   float potentiometer1;
   float potentiometer2;
 };
+struct BSPDMessage {
+  float bspd_current;
+};
 struct ButtonMessage {
   unsigned char startButton;
 };
@@ -173,17 +173,20 @@ struct FrontControllerData {
   struct WatchDogMessage watchDogMessage;
   struct AcceleratorMessage acceleratorMessage;
   struct BrakeMessage brakeMessage;
+  struct BSPDMessage bspdMessage;
   struct ButtonMessage buttonMessage;
 };
+/*---------------END-CAN-2---------------------*/
+
 struct BMSData {
   float voltages[140];
   float temps[100];
 };
 
 void can_init(unsigned char can_number);
-void can1_rx(StatusData *statusData);
 void can2_rx(FrontControllerData *frontControllerData, BMSData* bmsData);
-void can1_tx(CANMessage message);
-void can2_tx(CANMessage message);
+void can3_rx(StatusData *statusData);
+void can2_tx(CAN_message_t message);
+void can3_tx(CAN_message_t message);
 
 void send_command_message(struct CommandMessage message);

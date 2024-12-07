@@ -5,3 +5,7 @@
 .clang-tidy
 .idea
 .pio
+build.sh
+run.sh
+compile_commands.json
+

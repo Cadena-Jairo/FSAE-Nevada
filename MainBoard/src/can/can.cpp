@@ -1,83 +1,59 @@
 #include "can.h" // Ignore clang error it's being dumb
 #include "../status/status.h"
-#include "ACAN_T4.h"
-#include "ACAN_T4_CANMessage.h"
 #include "core_pins.h"
 #include "usb_serial.h"
 #include "wiring.h"
 #include <Arduino.h>
 
+// #define DEBUG_CAN to print debug messages here
+
 #define CAN_DISCONNECT_THRESHOLD 1000 // 1 second
 
 unsigned int last_can_message[2];
 
+FlexCAN_T4<CAN2, RX_SIZE_256, TX_SIZE_16> front_can;
+FlexCAN_T4<CAN3, RX_SIZE_256, TX_SIZE_16> inverter_can;
+
 void can_init(unsigned char can_number) {
   switch (can_number) {
-  case 0x01: {
-    ACAN_T4_Settings settings(BIT_RATE1 * 1000);
-    ACAN_T4::can1.begin(settings);
-    const unsigned int canError = ACAN_T4::can1.begin(settings);
-    if (canError == 0x00)
-      Serial.printf("Can 1 OK\n");
-    else {
-      Serial.printf("Can 1 initialization error: 0x%x\n", canError);
-    }
-    Serial.printf("Bitrate prescaler: %i\n", settings.mBitRatePrescaler);
-    Serial.printf("Propagation Segment: %i\n", settings.mPropagationSegment);
-    Serial.printf("Phase segment 1: %i\n", settings.mPhaseSegment1);
-    Serial.printf("Phase segment 2: %i\n", settings.mPhaseSegment2);
-    Serial.printf("RJW: %i\n", settings.mRJW);
-    Serial.printf("Triple Sampling: ");
-    Serial.printf(settings.mTripleSampling ? "yes\n" : "no\n");
-    Serial.printf("Actual bitrate: %i bit/s\n", settings.actualBitRate());
-    Serial.printf("Exact bitrate ? ");
-    Serial.printf(settings.exactBitRate() ? "yes\n" : "no\n");
-    Serial.printf("Distance from wished bitrate: %i ppm\n",
-                  settings.ppmFromWishedBitRate());
-    Serial.printf("Sample point: %i%\n", settings.samplePointFromBitStart());
-    break;
-  }
-  case 0x02: {
-    ACAN_T4_Settings settings(BIT_RATE2 * 1000);
-    ACAN_T4::can2.begin(settings);
-    const unsigned int canError = ACAN_T4::can2.begin(settings);
-    if (canError == 0x00)
-      Serial.printf("Can 1 OK\n");
-    else {
-      Serial.printf("Can 1 initialization error: 0x%x\n", canError);
-    }
-    Serial.printf("Bitrate prescaler: %i\n", settings.mBitRatePrescaler);
-    Serial.printf("Propagation Segment: %i\n", settings.mPropagationSegment);
-    Serial.printf("Phase segment 1: %i\n", settings.mPhaseSegment1);
-    Serial.printf("Phase segment 2: %i\n", settings.mPhaseSegment2);
-    Serial.printf("RJW: %i\n", settings.mRJW);
-    Serial.printf("Triple Sampling: ");
-    Serial.printf(settings.mTripleSampling ? "yes\n" : "no\n");
-    Serial.printf("Actual bitrate: %i bit/s\n", settings.actualBitRate());
-    Serial.printf("Exact bitrate ? ");
-    Serial.printf(settings.exactBitRate() ? "yes\n" : "no\n");
-    Serial.printf("Distance from wished bitrate: %i ppm\n",
-                  settings.ppmFromWishedBitRate());
-    Serial.printf("Sample point: %i%\n", settings.samplePointFromBitStart());
-    break;
-  }
+#ifdef DEBUG
+    case 0x01:
+      Serial.printf("Can 1 not used!\n");
+      break;
+#endif
+    case 0x02:
+      front_can.begin();
+      front_can.setBaudRate(BIT_RATE2 * 100);
+#ifdef DEBUG
+      Serial.printf("CAN2 Initialized at %dkb/s\n", BIT_RATE2);
+#endif
+      break;
+    case 0x03:
+      inverter_can.begin();
+      inverter_can.setBaudRate(BIT_RATE3 * 100);
+#ifdef DEBUG
+      Serial.printf("CAN3 Initialized at %dkb/s\n", BIT_RATE3);
+#endif
+      break;
   }
 }
 
-#define CAN_DATA canMessage.data64
+#define CAN_DATA data64
+#define DATA64_INIT (unsigned long long int) canMessage.buf[0] << 56 | (unsigned long long int) canMessage.buf[1] << 48 | (unsigned long long int) canMessage.buf[2] << 40 | (unsigned long long int) canMessage.buf[3] << 32 | (unsigned long long int) canMessage.buf[4] << 24 | (unsigned long long int) canMessage.buf[5] << 16 | (unsigned long long int) canMessage.buf[6] <<  8 | (unsigned long long int) canMessage.buf[7] <<  0;
 
-void can1_rx(StatusData *statusData) {
-  CANMessage canMessage;
-  ACAN_T4::can1.receive(canMessage);
+void can3_rx(StatusData *statusData) {
+  CAN_message_t canMessage;
+  inverter_can.read(canMessage);
 
   if (canMessage.len == 0x00)
     return;
 
   last_can_message[0] = millis();
 
+  unsigned long long int data64 = DATA64_INIT;
+
   // TODO: Test to make sure this is still working and remove it.
-  Serial.printf("MessageID: 0x%lx Message: 0x%llx\n", canMessage.id,
-                canMessage.data64);
+  Serial.printf("MessageID: 0x%lx Message: 0x%llx\n", canMessage.id, data64);
 
   switch (canMessage.id) {
   case TEMPS_1:
@@ -186,6 +162,7 @@ void can1_rx(StatusData *statusData) {
   }
   
   // TODO: REMOVE THIS
+  /*
   float temp1, temp2, temp3;
   temp1 = (float) statusData->tempratureMessage1.moduleA_temp / 10;
   temp2 = (float) statusData->tempratureMessage1.moduleB_temp / 10;
@@ -193,13 +170,21 @@ void can1_rx(StatusData *statusData) {
   Serial.printf(
       "Module A Temp: %0.2f  Module B Temp: %0.2f  Module C Temp: %0.2f\n",
       temp1, temp2, temp3);
+  */
 }
 
 void can2_rx(FrontControllerData *frontControllerData, BMSData* bmsData) {
-  CANMessage canMessage;
-  ACAN_T4::can2.receive(canMessage);
+  CAN_message_t canMessage;
+  front_can.read(canMessage);
+
   if (canMessage.len == 0x00)
     return;
+
+  unsigned long long int data64 = DATA64_INIT;
+  
+  digitalWrite(LED_BUILTIN, HIGH);
+
+  Serial.printf("Recieved message %ud\n", canMessage.id);
 
   last_can_message[1] = millis();
 
@@ -212,6 +197,10 @@ void can2_rx(FrontControllerData *frontControllerData, BMSData* bmsData) {
         (float)((0x00000000ffffffff & CAN_DATA) >> 0);
     frontControllerData->acceleratorMessage.potentiometer2 =
         (float)((0xffffffff00000000 & CAN_DATA) >> 32);
+    // TODO: Remove this
+    Serial.printf("Accelerator 1: %f Accelerator 2: %f\n",
+      frontControllerData->acceleratorMessage.potentiometer1,
+      frontControllerData->acceleratorMessage.potentiometer2);
     break;
   case BRAKE_MESSAGE:
     frontControllerData->acceleratorMessage.potentiometer1 =
@@ -224,23 +213,25 @@ void can2_rx(FrontControllerData *frontControllerData, BMSData* bmsData) {
     break;
   default:
     if (canMessage.id > 3 && canMessage.id <= 73) {
-      bmsData->temps[(canMessage.id - 3) / 2] = canMessage.dataFloat[0];
-      bmsData->temps[((canMessage.id - 3) / 2) + 1] = canMessage.dataFloat[1];
+      bmsData->temps[(canMessage.id - 3) / 2] = (float) *&canMessage.buf[0];
+      bmsData->temps[((canMessage.id - 3) / 2) + 1] = (float) *&canMessage.buf[4];
     } else if (canMessage.id > 73 && canMessage.id < 153) {
-      bmsData->voltages[(canMessage.id - 73) / 2] = canMessage.dataFloat[0];
-      bmsData->voltages[((canMessage.id - 73) / 2) + 1] = canMessage.dataFloat[1];
+      bmsData->voltages[(canMessage.id - 73) / 2] = (float) *&canMessage.buf[0];
+      bmsData->voltages[((canMessage.id - 73) / 2) + 1] = (float) *&canMessage.buf[4];
     }
     break;
   }
+
+  digitalWrite(LED_BUILTIN, LOW);
 }
 
-void can1_tx(CANMessage message) { ACAN_T4::can1.tryToSend(message); }
+void can2_tx(CAN_message_t message) { front_can.write(message); }
 
-void can2_tx(CANMessage message) { ACAN_T4::can2.tryToSend(message); }
+void can3_tx(CAN_message_t message) { inverter_can.write(message); }
 
 void send_command_message(struct CommandMessage message) {
-  CANMessage output;
-  output.data64 =
+  CAN_message_t canMessage;
+  unsigned long long int data64 =
       (((unsigned long long int) message.commanded_torque_limit << 48) |
        ((unsigned long long int) message.speed_mode_enable << 42) |
        ((unsigned long long int) message.inverter_discharge << 41) |
@@ -248,7 +239,11 @@ void send_command_message(struct CommandMessage message) {
        ((unsigned long long int) message.direction_command << 32) |
        ((unsigned long long int) message.speed_command << 16) |
        ((unsigned long long int) message.torque_command));
-  can1_tx(output);
+  // Convert our unsigned long long int to an unsigned char[8]
+  for (int i = 0; i < 8; i++) {
+      canMessage.buf[i] = (unsigned char) (data64 >> (i * 8) & 0xFF);
+  }
+  can3_tx(canMessage);
 }
 
 void can_disconnect_check() {

@@ -1,4 +1,3 @@
-#include "ACAN_T4_CANMessage.h" // Ignore clang error it's being stupid
 #include "core_pins.h"
 #include "usb_serial.h"
 #ifndef __IMXRT1062__
@@ -12,12 +11,13 @@
 #ifndef __clang__
 #include <interrupts.h>
 #endif
-#include "status/status.h"
 #include "can/can.h"
 #include "sd/sd.h"
+#include "status/status.h"
 #include <Arduino.h>
 
-// How many seconds the start button has to be pressed to start the startup procedure
+// How many seconds the start button has to be pressed to start the startup
+// procedure
 #define SECONDS_TO_START_CAR 5
 #define DIRECTION_FORWARD 0x01
 #define DIRECTION_BACKWARD 0x00
@@ -36,7 +36,8 @@ struct FrontControllerData frontControllerData;
 struct BMSData bmsData;
 struct CommandMessage commandMessage;
 
-unsigned char button_time(unsigned char value, unsigned int min_times, unsigned int* press_time);
+unsigned char button_time(unsigned char value, unsigned int min_times,
+                          unsigned int *press_time);
 
 /*
  * Interrupt service routines:
@@ -50,9 +51,11 @@ void button_interrupt() {
 void setup() {
   Serial.begin(115200);
   Serial.printf("Starting...\n");
-  can_init(1);
+  pinMode(LED_BUILTIN, OUTPUT);
   can_init(2);
-  // Place default values into command message to remove the possibility of junk values
+  can_init(3);
+  // Place default values into command message to remove the possibility of junk
+  // values
   commandMessage.torque_command = 0x00;
   commandMessage.speed_command = 0x00;
   commandMessage.direction_command = DIRECTION_FORWARD;
@@ -65,33 +68,35 @@ void setup() {
 unsigned int start_button_press_time = 0x00;
 
 void loop() {
-  can1_rx(&statusData);
   can2_rx(&frontControllerData, &bmsData);
-  
+  can3_rx(&statusData);
+
   // Logic to run when car is not running
   if (car_ready() == 0x00) {
-    // See if the start button has been pressed for a certian ammount of time. If so, then start the starup procedure;
-    if (button_time(frontControllerData.buttonMessage.startButton, SECONDS_TO_START_CAR, &start_button_press_time) == 0x01) {
+    // See if the start button has been pressed for a certian ammount of time.
+    // If so, then start the starup procedure;
+    if (button_time(frontControllerData.buttonMessage.startButton,
+                    SECONDS_TO_START_CAR, &start_button_press_time) == 0x01) {
       // Run startup checks then set run_car to 1
     }
   } else if (car_ready() == 0x01) {
     send_command_message(commandMessage);
   }
 
-  logData(&statusData, &frontControllerData);
+  // logData(&statusData, &frontControllerData);
 }
 
 // Return 1 if a value = 1 for min_times seconds
 // To use, store a u_int32 global variable and pass by address to press_time
 // TODO: Place in another source file
-unsigned char button_time(unsigned char value, unsigned int min_times, unsigned int* press_time) {
+unsigned char button_time(unsigned char value, unsigned int min_times,
+                          unsigned int *press_time) {
   if (value == 0x01 && *press_time == 0x00) {
     *press_time = millis();
   } else if (value == 0x01 && *press_time != 0x00) {
     if (millis() > (*press_time + (1000 * min_times))) {
       return 0x01;
     }
-  } else {
-    return 0x00;
   }
+  return 0x00;
 }
