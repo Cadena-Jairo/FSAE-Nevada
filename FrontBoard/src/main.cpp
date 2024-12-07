@@ -32,7 +32,7 @@
 
 struct FrontControllerData frontControllerData;
 
-unsigned char button_to_bool(float voltage);
+unsigned char button_to_bool(int voltage);
 
 void setup() {
   Serial.begin(115200);
@@ -64,30 +64,32 @@ void setup() {
 
 void loop() {
   // TODO: When ready to submit actual values, uncomment the transmit messages
-  frontControllerData.brakeMessage.potentiometer1 = analogRead(BRAKE_FRONT);
-  frontControllerData.brakeMessage.potentiometer2 = analogRead(BRAKE_REAR);
+  // We are deviding each by 1023 to get a float from 0 to 1 instead of a int from 0 to 1023
+  // Possible change: Pass everything as an intager instead of a float. (might make deviding the 64 bit intager a lot easier)
+  frontControllerData.brakeMessage.potentiometer1 = (float) (analogRead(BRAKE_FRONT) / 1023);
+  frontControllerData.brakeMessage.potentiometer2 = (float) (analogRead(BRAKE_REAR) / 1023);
   // send_to_main_controller(&frontControllerData, BRAKE_MESSAGE);
-  frontControllerData.acceleratorMessage.potentiometer1 = analogRead(ACCELERATOR_1);
-  frontControllerData.acceleratorMessage.potentiometer2 = analogRead(ACCELERATOR_2);
+  frontControllerData.acceleratorMessage.potentiometer1 = (float) (analogRead(ACCELERATOR_1) / 1023);
+  frontControllerData.acceleratorMessage.potentiometer2 = (float) (analogRead(ACCELERATOR_2) / 1023);
   // send_to_main_controller(&frontControllerData, ACCELERATOR_MESSAGE);
-  frontControllerData.buttonMessage.startButton = analogRead(RTD_BUTTON);
+  frontControllerData.buttonMessage.startButton = button_to_bool(analogRead(RTD_BUTTON));
   // send_to_main_controller(&frontControllerData, ACCELERATOR_MESSAGE);
-  frontControllerData.bspdMessage.bspd_current = analogRead(BSPD_CURRENT);
+  frontControllerData.bspdMessage.bspd_current = (float) (analogRead(BSPD_CURRENT) / 1023);
   // send_to_main_controller(&frontControllerData, BSPD_MESSAGE);
   
   // TODO: Figure out what to do with these sensors if they end up existing.
-  // analogRead(SENSOR_7);
-  // analogRead(SENSOR_8);
-  // analogRead(SENSOR_16);
-  // analogRead(SENSOR_18);
-  // analogRead(SENSOR_17);
-  // analogRead(SENSOR_9);
-  // analogRead(SENSOR_15);
-  // analogRead(SENSOR_14);
-  // analogRead(SENSOR_10);
-  // analogRead(SENSOR_11);
-  // analogRead(SENSOR_12);
-  // analogRead(SENSOR_13);
+  // data = (float) (analogRead(SENSOR_7) / 1023);
+  // data = (float) (analogRead(SENSOR_8) / 1023);
+  // data = (float) (analogRead(SENSOR_16) / 1023);
+  // data = (float) (analogRead(SENSOR_18) / 1023);
+  // data = (float) (analogRead(SENSOR_17) / 1023);
+  // data = (float) (analogRead(SENSOR_9) / 1023);
+  // data = (float) (analogRead(SENSOR_15) / 1023);
+  // data = (float) (analogRead(SENSOR_14) / 1023);
+  // data = (float) (analogRead(SENSOR_10) / 1023);
+  // data = (float) (analogRead(SENSOR_11) / 1023);
+  // data = (float) (analogRead(SENSOR_12) / 1023);
+  // data = (float) (analogRead(SENSOR_13) / 1023);
 
   // TODO: Remove this once working
   CANMessage temp_message;
@@ -98,7 +100,7 @@ void loop() {
 }
 
 // TODO: If different buttons have different voltage thresholds, then add that as an argument.
-unsigned char button_to_bool(float voltage) {
+unsigned char button_to_bool(int voltage) {
   if (voltage > BUTTON_VOLTAGE_THRESHOLD) {
     return 0x01;
   }
