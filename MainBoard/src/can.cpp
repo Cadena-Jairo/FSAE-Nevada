@@ -1,4 +1,8 @@
-#include "can.h"
+#include "can.h" // Ignore stdlib.h clang error
+
+#ifdef __clang__
+void *memset(void *str, int c, size_t n);
+#endif
 
 ACCUMData accumData;
 FCUData fcuData;
@@ -34,21 +38,21 @@ void sendCANMessage(uint32_t id, uint8_t *data, uint8_t length) {
 
 void canISR(const CAN_message_t &rxMsg) {
   switch (rxMsg.id) {
-  case 0x0E0:
+  case MCU_POWER_DISTRO_BROADCAST1:
     mcuData.LV_Batt_Voltage = (rxMsg.buf[0] | (rxMsg.buf[1] << 8)) / 100.0;
     mcuData.LV_Buck_Temp = (rxMsg.buf[2] | (rxMsg.buf[3] << 8)) / 100.0;
     mcuData.eFuse_Current[0] = (rxMsg.buf[4] | (rxMsg.buf[5] << 8)) / 100.0;
     mcuData.eFuse_Current[1] = (rxMsg.buf[6] | (rxMsg.buf[7] << 8)) / 100.0;
     break;
 
-  case 0x0E1:
+  case MCU_POWER_DISTRO_BROADCAST2:
     mcuData.eFuse_Current[2] = (rxMsg.buf[0] | (rxMsg.buf[1] << 8)) / 100.0;
     mcuData.eFuse_Current[3] = (rxMsg.buf[2] | (rxMsg.buf[3] << 8)) / 100.0;
     mcuData.eFuse_Current[4] = (rxMsg.buf[4] | (rxMsg.buf[5] << 8)) / 100.0;
     mcuData.eFuse_Current[5] = (rxMsg.buf[6] | (rxMsg.buf[7] << 8)) / 100.0;
     break;
 
-  case 0x002:
+  case ACC_STATUS_BROADCAST:
     accumData.IR_POS_ACTIVE = (rxMsg.buf[0] & 0x01);
     accumData.IR_NEG_ACTIVE = (rxMsg.buf[0] & 0x02);
     accumData.PRECHARGE_ACTIVE = (rxMsg.buf[0] & 0x04);
@@ -57,19 +61,19 @@ void canISR(const CAN_message_t &rxMsg) {
     accumData.SDC_ACTIVE = (rxMsg.buf[0] & 0x20);
     break;
 
-  case 0x003:
+  case MCU_ACCUM_BROADCAST_WATCHDOG:
     mcuData.RESET = (rxMsg.buf[0] & 0x01);
     mcuData.IR_ON_OFF = (rxMsg.buf[0] & 0x02);
     mcuData.CAR_OR_CHARGER = (rxMsg.buf[0] & 0x04);
     break;
 
-  case 0x0D0:
+  case ACC_LOW_HIGH_AVG_CELL_TEMP:
     accumData.CELL_TEMP_LOW = (rxMsg.buf[0] | (rxMsg.buf[1] << 8)) / 100.0;
     accumData.CELL_TEMP_AVG = (rxMsg.buf[2] | (rxMsg.buf[3] << 8)) / 100.0;
     accumData.CELL_TEMP_HIGH = (rxMsg.buf[4] | (rxMsg.buf[5] << 8)) / 100.0;
     break;
 
-  case 0x0D1:
+  case ACC_LOW_HIGH_AVG_VOLTAGE:
     accumData.CELL_VOLTAGE_LOW = (rxMsg.buf[0] | (rxMsg.buf[1] << 8)) / 100.0;
     accumData.CELL_VOLTAGE_AVG = (rxMsg.buf[2] | (rxMsg.buf[3] << 8)) / 100.0;
     accumData.CELL_VOLTAGE_HIGH = (rxMsg.buf[4] | (rxMsg.buf[5] << 8)) / 100.0;

@@ -1,4 +1,4 @@
-#include "TaskScheduler.h"
+#include "TaskScheduler.h" // Ignore stdlib.h clang error
 #include "can.h"
 
 //#define _TASK_PRIORITY
