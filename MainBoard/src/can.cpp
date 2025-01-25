@@ -9,6 +9,11 @@ FCUData fcuData;
 MCUData mcuData;
 IMDData imdData;
 
+ACCUMData *get_accumData_struct() { return &accumData; }
+FCUData *get_fcuData_struct() { return &fcuData; }
+MCUData *get_mcuData_struct() { return &mcuData; }
+IMDData *get_imdData_struct() { return &imdData; }
+
 void precharge_seq() {
   if (mcuData.IR_ON_OFF == 1) {
     Serial.println("IR ON");
@@ -38,6 +43,13 @@ void sendCANMessage(uint32_t id, uint8_t *data, uint8_t length) {
 
 void canISR(const CAN_message_t &rxMsg) {
   switch (rxMsg.id) {
+  case FCU_THROTTLE_BRAKE:
+    fcuData.Throttle_Pot1 = (rxMsg.buf[0] | (rxMsg.buf[1] << 8)) / 100.0;
+    fcuData.Throttle_Pot2 = (rxMsg.buf[2] | (rxMsg.buf[3] << 8)) / 100.0;
+    fcuData.Brake_Transducer1 = (rxMsg.buf[4] | (rxMsg.buf[5] << 8)) / 100.0;
+    fcuData.Brake_Transducer2 = (rxMsg.buf[6] | (rxMsg.buf[7] << 8)) / 100.0;
+    break;
+
   case MCU_POWER_DISTRO_BROADCAST1:
     mcuData.LV_Batt_Voltage = (rxMsg.buf[0] | (rxMsg.buf[1] << 8)) / 100.0;
     mcuData.LV_Buck_Temp = (rxMsg.buf[2] | (rxMsg.buf[3] << 8)) / 100.0;
@@ -83,6 +95,8 @@ void canISR(const CAN_message_t &rxMsg) {
   default:
     Serial.print("Unknown CAN ID: 0x");
     Serial.println(rxMsg.id, HEX);
+    return; // FIXME: Remove this. It's just here so we don't print the message
+            // out twice.
     break;
   }
 

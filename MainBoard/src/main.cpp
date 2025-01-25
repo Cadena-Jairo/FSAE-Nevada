@@ -12,6 +12,11 @@ const int muxS0 = 9;
 const int muxS1 = 8;
 const int muxS2 = 7;
 
+ACCUMData* accumData_p;
+FCUData* fcuData_p;
+MCUData* mcuData_p;
+IMDData* imdData_p;
+
 // CAN Setup for CAN2
 FlexCAN_T4<CAN2, RX_SIZE_256, TX_SIZE_16> can2;
 
@@ -23,6 +28,12 @@ Task main_task(200, TASK_FOREVER, &main_isr);
 
 void setup() {
   Serial.begin(115200);
+
+  // Get our pointers to all of the data
+  accumData_p = get_accumData_struct();
+  fcuData_p = get_fcuData_struct();
+  mcuData_p = get_mcuData_struct();
+  imdData_p = get_imdData_struct();
 
   // pinMode(muxSIG, INPUT);
   // pinMode(muxS0, OUTPUT);
