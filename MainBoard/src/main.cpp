@@ -1,5 +1,8 @@
 #include "TaskScheduler.h" // Ignore stdlib.h clang error
+#include "status.h"
 #include "can.h"
+
+void main_isr();
 
 //#define _TASK_PRIORITY
 //#define _TASK_TIMEOUT
@@ -16,6 +19,7 @@ FlexCAN_T4<CAN2, RX_SIZE_256, TX_SIZE_16> can2;
 Scheduler ts;
 
 Task tprecharge_IR_check(200, TASK_FOREVER, &precharge_seq);
+Task main_task(200, TASK_FOREVER, &main_isr);
 
 void setup() {
   Serial.begin(115200);
@@ -42,3 +46,21 @@ void setup() {
 void loop() {
   ts.execute(); // Execute scheduled tasks
 }
+
+void main_isr() {
+  switch (get_status()) {
+    case STATUS_SHUTDOWN:
+      // Car is not running
+      // TODO: Check to see if we should turn on the car 
+      break;
+    case STATUS_RUNNING:
+      // Car is running
+      // TODO: Run checks
+      // TODO: Send commands to the inverter
+      break;
+    default:
+      shutdown_car("Car has reached an unknown status!");
+      break;
+  }
+}
+
